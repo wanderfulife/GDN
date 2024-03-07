@@ -20,7 +20,7 @@
 		<button @click="startSurvey" class="btn-next">START</button>
 	</div>
 
-	<div v-if="level === 3" class="card">
+	<div v-if="level === 3" class="card disable-dbl-tap-zoom">
 		<button type="button" @click="count++">Compteur: {{ count }}</button>
 	</div>
 </template>
@@ -156,6 +156,11 @@ const downloadData = async () => {
 // surveyNumber.value = newNumber; // Update the local ref
 // };
 <style>
+
+.disable-dbl-tap-zoom {
+	touch-action: manipulation;
+}
+
 body {
 	background-color: #2a3b63;
 }

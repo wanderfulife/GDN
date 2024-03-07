@@ -16,13 +16,14 @@
 		<button @click="back" class="btn-return">retour</button>
 	</div>
 
-	<div v-if="level === 2">
-		<button @click="startSurvey" class="btn-next">START</button>
-	</div>
 
-	<div v-if="level === 3" class="card disable-dbl-tap-zoom">
-		<button type="button" @click="count++">Compteur: {{ count }}</button>
+	<div v-if="level === 2" class="colonne disable-dbl-tap-zoom">
+		<button type="button" @click="addCounter">Compteur: {{ count }}</button>
+		<button type="button" @click="fileVide">File Vide: {{ vide }}</button>
+		<button @click="exit" class="btn-fin">Fin</button>
 	</div>
+	<button @click="downloadData" class="btn-fin">download</button>
+
 </template>
 
 <script setup>
@@ -32,39 +33,40 @@ import { postes } from "./reponses";
 import { collection, doc, getDoc, getDocs, updateDoc, addDoc } from "firebase/firestore";
 import * as XLSX from "xlsx";
 
-const surveyCollectionRef = collection(db, "Sens");
+const surveyCollectionRef = collection(db, "GDN");
 const level = ref(0);
-const startDate = ref('');
 const enqueteur = ref('');
 const poste = ref('');
-const count = ref(0)
+const count = ref(0);
+const vide = ref(0);
 
-const startSurvey = () => {
-	startDate.value = new Date().toLocaleTimeString("fr-FR").slice(0, 8);
-	level.value++;
-}
 
 const next = () => {
 	level.value++;
-
 }
 
-const back = () => {
-	level.value--;
+const exit = () => {
+	level.value = 0;
 }
 
-const submitSurvey = async () => {
-	level.value = 1;
-	await fetchSurveyNumber()
+const addCounter = async () => {
+	count.value++;
 	await addDoc(surveyCollectionRef, {
-		HEURE_DEBUT: startDate.value,
+		ENQUETEUR: enqueteur.value,
 		POSTE: poste.value,
 		DATE: new Date().toLocaleDateString("fr-FR").replace(/\//g, "-"),
-		JOUR: new Date().toLocaleDateString("fr-FR", { weekday: 'long' }),
-		ENQUETEUR: enqueteur.value,
+		HORODATAGE: new Date().toLocaleTimeString("fr-FR").slice(0, 8),
 	});
-	startDate.value = "";
-	await updateSurveyNumber()
+};
+
+const fileVide = async () => {
+	vide.value++;
+	await addDoc(surveyCollectionRef, {
+		ENQUETEUR: enqueteur.value,
+		POSTE: poste.value,
+		DATE: new Date().toLocaleDateString("fr-FR").replace(/\//g, "-"),
+		AUCUNPASSAGE: new Date().toLocaleTimeString("fr-FR").slice(0, 8),
+	});
 };
 
 const downloadData = async () => {
@@ -76,12 +78,10 @@ const downloadData = async () => {
 		// Define your headers
 		const headers = {
 			ID_questionnaire: "ID_questionnaire",
-			Enqueteur: "Enqueteur",
+			ENQUETEUR: "ENQUETEUR",
 			DATE: "DATE",
-			JOUR: "JOUR",
-			HEURE: "HEURE",
-			Poste: "POSTE",
-
+			HORODATAGE: "HORODATAGE",
+			POSTE: "POSTE",
 		};
 
 		// Initialize maxWidths with header lengths
@@ -93,11 +93,10 @@ const downloadData = async () => {
 			let docData = doc.data();
 			let mappedData = {
 				ID_questionnaire: doc.id,
-				Enqueteur: docData.ENQUETEUR || "",
+				ENQUETEUR: docData.ENQUETEUR || "",
 				DATE: docData.DATE || "",
-				JOUR: docData.JOUR || "",
-				HEURE: docData.HEURE_DEBUT || "",
-				Poste: docData.POSTE || "",
+				HORODATAGE: docData.HORODATAGE || "",
+				POSTE: docData.POSTE || "",
 
 			};
 			data.push(mappedData);
@@ -156,7 +155,6 @@ const downloadData = async () => {
 // surveyNumber.value = newNumber; // Update the local ref
 // };
 <style>
-
 .disable-dbl-tap-zoom {
 	touch-action: manipulation;
 }
@@ -220,8 +218,8 @@ h2 {
 	cursor: pointer;
 }
 
-.btn-return:hover {
-	background-color: #839684;
+.btn-fin:hover {
+	background-color: red;
 }
 
 .commune-dropdown {
@@ -252,6 +250,12 @@ input.form-control {
 .commune-dropdown li {
 	padding: 5px 10px;
 	cursor: pointer;
+}
+
+.colonne {
+	display: flex;
+	flex-direction: column;
+	padding-top: 2%;
 }
 
 *:focus {

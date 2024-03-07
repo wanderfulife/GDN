@@ -21,7 +21,7 @@
 	</div>
 
 	<div v-if="level === 3" class="card">
-		<button type="button" @click="count++">count is {{ count }}</button>
+		<button type="button" @click="count++">Compteur: {{ count }}</button>
 	</div>
 </template>
 

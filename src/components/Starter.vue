@@ -1,0 +1,266 @@
+<template>
+	<div v-if="level === 0">
+		<h2>Prénom enqueteur :</h2>
+		<input class="form-control" type="text" v-model="enqueteur" />
+		<button v-if="enqueteur" @click="next" class="btn-next">Suivant</button>
+	</div>
+
+	<div v-if="level === 1" class="form-group">
+		<h1>Poste enquêteur</h1>
+		<select v-model="poste" class="form-control">
+			<option v-for="option in postes" :key="option.id" :value="option.output">
+				{{ option.text }}
+			</option>
+		</select>
+		<button v-if="poste" @click="next" class="btn-next">Suivant</button>
+		<button @click="back" class="btn-return">retour</button>
+	</div>
+
+	<div v-if="level === 2">
+		<button @click="startSurvey" class="btn-next">START</button>
+	</div>
+
+	<div v-if="level === 3" class="card">
+		<button type="button" @click="count++">count is {{ count }}</button>
+	</div>
+</template>
+
+<script setup>
+import { ref } from "vue";
+import { db } from "../firebaseConfig";
+import { postes } from "./reponses";
+import { collection, doc, getDoc, getDocs, updateDoc, addDoc } from "firebase/firestore";
+import * as XLSX from "xlsx";
+
+const surveyCollectionRef = collection(db, "Sens");
+const level = ref(0);
+const startDate = ref('');
+const enqueteur = ref('');
+const poste = ref('');
+const count = ref(0)
+
+const startSurvey = () => {
+	startDate.value = new Date().toLocaleTimeString("fr-FR").slice(0, 8);
+	level.value++;
+}
+
+const next = () => {
+	level.value++;
+
+}
+
+const back = () => {
+	level.value--;
+}
+
+const submitSurvey = async () => {
+	level.value = 1;
+	await fetchSurveyNumber()
+	await addDoc(surveyCollectionRef, {
+		HEURE_DEBUT: startDate.value,
+		POSTE: poste.value,
+		DATE: new Date().toLocaleDateString("fr-FR").replace(/\//g, "-"),
+		JOUR: new Date().toLocaleDateString("fr-FR", { weekday: 'long' }),
+		ENQUETEUR: enqueteur.value,
+	});
+	startDate.value = "";
+	await updateSurveyNumber()
+};
+
+const downloadData = async () => {
+	try {
+		const querySnapshot = await getDocs(surveyCollectionRef);
+		let data = [];
+		let maxWidths = {}; // Object to keep track of maximum width for each column
+
+		// Define your headers
+		const headers = {
+			ID_questionnaire: "ID_questionnaire",
+			Enqueteur: "Enqueteur",
+			DATE: "DATE",
+			JOUR: "JOUR",
+			HEURE: "HEURE",
+			Poste: "POSTE",
+
+		};
+
+		// Initialize maxWidths with header lengths
+		Object.keys(headers).forEach((key) => {
+			maxWidths[key] = headers[key].length;
+		});
+
+		querySnapshot.forEach((doc) => {
+			let docData = doc.data();
+			let mappedData = {
+				ID_questionnaire: doc.id,
+				Enqueteur: docData.ENQUETEUR || "",
+				DATE: docData.DATE || "",
+				JOUR: docData.JOUR || "",
+				HEURE: docData.HEURE_DEBUT || "",
+				Poste: docData.POSTE || "",
+
+			};
+			data.push(mappedData);
+
+			// Update maxWidths for each key in mappedData
+			Object.keys(mappedData).forEach((key) => {
+				const valueLength = mappedData[key].toString().length;
+				maxWidths[key] = Math.max(maxWidths[key], valueLength);
+			});
+		});
+
+		// Convert data to a worksheet
+		const worksheet = XLSX.utils.json_to_sheet(data, {
+			header: Object.keys(headers),
+			skipHeader: false,
+		});
+
+		// Set the widths for each column
+		worksheet["!cols"] = Object.keys(maxWidths).map((key) => ({
+			wch: maxWidths[key] + 2 // +2 for a little extra padding
+		}));
+
+		const workbook = XLSX.utils.book_new();
+		XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+
+		// Export the workbook to a .xlsx file
+		XLSX.writeFile(workbook, "OdSens.xlsx");
+	} catch (error) {
+		console.error("Error downloading data: ", error);
+	}
+};
+
+</script>
+// ID_ENQUETE: surveyNumber.value,
+// ID_ENQUETE: "ID_ENQUETE",
+
+// const surveyNumber;
+// const fetchSurveyNumber = async () => {
+// const surveyRef = doc(db, "Counters", "sens");
+// const docSnap = await getDoc(surveyRef);
+// if (docSnap.exists() && docSnap.data().numero !== undefined) {
+// surveyNumber.value = docSnap.data().numero;
+// console.log(surveyNumber.value)
+// } else {
+// console.log("No such document or 'numero' field is missing!");
+// }
+// };
+
+// Function to increment and update the survey number in Firebase
+// const updateSurveyNumber = async () => {
+// const newNumber = surveyNumber.value + 1; // Increment the survey number
+// const surveyRef = doc(db, "Counters", "sens");
+// await updateDoc(surveyRef, {
+// counter: newNumber
+// });
+// surveyNumber.value = newNumber; // Update the local ref
+// };
+<style>
+body {
+	background-color: #2a3b63;
+}
+
+.logo {
+	padding: 10%;
+	height: 3em;
+}
+
+h1 {
+	text-align: center;
+	color: #4caf50;
+}
+
+h2 {
+	color: white;
+}
+
+.container {
+	background-color: #2a3b63;
+	color: white;
+	padding: 5% 0;
+	width: 75%;
+	margin: auto;
+}
+
+.btn-next {
+	width: 100%;
+	background-color: green;
+	color: white;
+	padding: 20px 20px;
+	margin-top: 20%;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+}
+
+.btn-fin {
+	width: 100%;
+	background-color: #4c4faf;
+	color: white;
+	padding: 20px 20px;
+	margin-top: 5%;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+}
+
+.btn-return {
+	width: 100%;
+	background-color: #898989;
+	color: white;
+	padding: 20px 20px;
+	margin-top: 5%;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+}
+
+.btn-return:hover {
+	background-color: #839684;
+}
+
+.commune-dropdown {
+	/* Style your dropdown list here */
+	list-style-type: none;
+	padding: 0;
+	margin: 0;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	max-height: 200px;
+	overflow-y: auto;
+}
+
+.form-control {
+	width: 100%;
+	border-radius: 5px;
+	border: 1px solid white;
+	background-color: #333;
+	color: white;
+	text-transform: uppercase;
+	font-weight: bolder;
+}
+
+input.form-control {
+	width: 93%;
+}
+
+.commune-dropdown li {
+	padding: 5px 10px;
+	cursor: pointer;
+}
+
+*:focus {
+	outline: none;
+}
+
+.commune-dropdown li:hover {
+	background-color: #f0f0f0;
+}
+
+input,
+select,
+button {
+	font-size: 16px;
+	padding: 10px;
+}
+</style>

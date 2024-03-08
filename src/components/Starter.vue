@@ -3,6 +3,7 @@
 		<h2>Prénom enqueteur :</h2>
 		<input class="form-control" type="text" v-model="enqueteur" />
 		<button v-if="enqueteur" @click="next" class="btn-next">Suivant</button>
+		<button @click="downloadData" class="btn-fin">download</button>
 	</div>
 
 	<div v-if="level === 1" class="form-group">
@@ -22,7 +23,6 @@
 		<button type="button" @click="fileVide">File Vide: {{ vide }}</button>
 		<button @click="exit" class="btn-fin">Fin</button>
 	</div>
-	<button @click="downloadData" class="btn-fin">download</button>
 
 </template>
 
@@ -30,10 +30,10 @@
 import { ref } from "vue";
 import { db } from "../firebaseConfig";
 import { postes } from "./reponses";
-import { collection, doc, getDoc, getDocs, updateDoc, addDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc } from "firebase/firestore";
 import * as XLSX from "xlsx";
 
-const surveyCollectionRef = collection(db, "GDN");
+const surveyCollectionRef = collection(db, "gdn");
 const level = ref(0);
 const enqueteur = ref('');
 const poste = ref('');
@@ -50,23 +50,28 @@ const exit = () => {
 }
 
 const addCounter = async () => {
-	count.value++;
-	await addDoc(surveyCollectionRef, {
-		ENQUETEUR: enqueteur.value,
-		POSTE: poste.value,
-		DATE: new Date().toLocaleDateString("fr-FR").replace(/\//g, "-"),
-		HORODATAGE: new Date().toLocaleTimeString("fr-FR").slice(0, 8),
-	});
+	try {
+		await addDoc(surveyCollectionRef, {
+			ENQUETEUR: enqueteur.value,
+			POSTE: poste.value,
+			DATE: new Date().toLocaleDateString("fr-FR").replace(/\//g, "-"),
+			HORODATAGE: new Date().toLocaleTimeString("fr-FR").slice(0, 8),
+		});
+		count.value++;
+	} catch (error) {
+		console.error("Error adding document: ", error);
+	}
 };
 
+
 const fileVide = async () => {
-	vide.value++;
 	await addDoc(surveyCollectionRef, {
 		ENQUETEUR: enqueteur.value,
 		POSTE: poste.value,
 		DATE: new Date().toLocaleDateString("fr-FR").replace(/\//g, "-"),
 		AUCUNPASSAGE: new Date().toLocaleTimeString("fr-FR").slice(0, 8),
 	});
+	vide.value++;
 };
 
 const downloadData = async () => {
@@ -80,8 +85,9 @@ const downloadData = async () => {
 			ID_questionnaire: "ID_questionnaire",
 			ENQUETEUR: "ENQUETEUR",
 			DATE: "DATE",
-			HORODATAGE: "HORODATAGE",
 			POSTE: "POSTE",
+			HORODATAGE: "HORODATAGE",
+			AUCUNPASSAGE: "AUCUN PASSAGE"
 		};
 
 		// Initialize maxWidths with header lengths
@@ -97,6 +103,7 @@ const downloadData = async () => {
 				DATE: docData.DATE || "",
 				HORODATAGE: docData.HORODATAGE || "",
 				POSTE: docData.POSTE || "",
+				AUCUNPASSAGE: docData.AUCUNPASSAGE || "",
 
 			};
 			data.push(mappedData);

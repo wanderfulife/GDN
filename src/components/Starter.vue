@@ -139,37 +139,13 @@ const downloadData = async () => {
 		XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
 
 		// Export the workbook to a .xlsx file
-		XLSX.writeFile(workbook, "OdSens.xlsx");
+		XLSX.writeFile(workbook, "GDN.xlsx");
 	} catch (error) {
 		console.error("Error downloading data: ", error);
 	}
 };
 
 </script>
-// ID_ENQUETE: surveyNumber.value,
-// ID_ENQUETE: "ID_ENQUETE",
-
-// const surveyNumber;
-// const fetchSurveyNumber = async () => {
-// const surveyRef = doc(db, "Counters", "sens");
-// const docSnap = await getDoc(surveyRef);
-// if (docSnap.exists() && docSnap.data().numero !== undefined) {
-// surveyNumber.value = docSnap.data().numero;
-// console.log(surveyNumber.value)
-// } else {
-// console.log("No such document or 'numero' field is missing!");
-// }
-// };
-
-// Function to increment and update the survey number in Firebase
-// const updateSurveyNumber = async () => {
-// const newNumber = surveyNumber.value + 1; // Increment the survey number
-// const surveyRef = doc(db, "Counters", "sens");
-// await updateDoc(surveyRef, {
-// counter: newNumber
-// });
-// surveyNumber.value = newNumber; // Update the local ref
-// };
 <style>
 .disable-dbl-tap-zoom {
 	touch-action: manipulation;

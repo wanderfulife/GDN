@@ -3,7 +3,7 @@
 		<h2>Prénom enqueteur :</h2>
 		<input class="form-control" type="text" v-model="enqueteur" />
 		<button v-if="enqueteur" @click="next" class="btn-next">Suivant</button>
-		<button @click="downloadData" class="btn-fin">download</button>
+		<!-- <button @click="downloadData" class="btn-fin">download</button> -->
 	</div>
 
 	<div v-if="level === 1" class="form-group">

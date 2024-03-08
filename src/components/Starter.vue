@@ -20,7 +20,12 @@
 
 	<div v-if="level === 2" class="colonne disable-dbl-tap-zoom">
 		<button type="button" @click="addCounter">Compteur: {{ count }}</button>
+		<br>
+		<br>
+		<br>
+		<br>
 		<button type="button" @click="fileVide">File Vide: {{ vide }}</button>
+		<br><br>
 		<button @click="exit" class="btn-fin">Fin</button>
 	</div>
 
@@ -43,6 +48,10 @@ const vide = ref(0);
 
 const next = () => {
 	level.value++;
+}
+
+const back = () => {
+	level.value--;
 }
 
 const exit = () => {
@@ -197,7 +206,7 @@ h2 {
 	background-color: green;
 	color: white;
 	padding: 20px 20px;
-	margin-top: 20%;
+	margin-top: 3em;
 	border: none;
 	border-radius: 5px;
 	cursor: pointer;
